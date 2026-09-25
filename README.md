@@ -1,54 +1,76 @@
-# chunk-boundary-lint — ferramenta grátis e de código aberto para checar fronteira de chunk em GEO
+**English** · [Português (Brasil)](README.pt-BR.md)
 
-`chunk-boundary-lint` é uma ferramenta gratuita e de código aberto que
-confere se o primeiro parágrafo de cada seção (H2/H3) de um HTML sobrevive
-sozinho quando um sistema de busca com IA recorta só aquela seção, fora do
-contexto do resto da página — o jeito como RAG e resposta generativa
-costumam consumir conteúdo, seção por seção, não a página inteira de uma
-vez.
+# chunk-boundary-lint
 
-## Por que fronteira de chunk importa em SEO/GEO
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)
 
-Sistemas de recuperação (RAG) que alimentam resposta de IA dividem uma
-página em pedaços ("chunks"), geralmente por seção, e recuperam o pedaço
-mais relevante para a pergunta — não a página inteira. Se o primeiro
-parágrafo de uma seção começa com "Além disso, isso também ajuda...", esse
-pedaço, sozinho, não faz sentido nenhum. `chunk-boundary-lint` audita
-exatamente esse ponto de corte.
+`chunk-boundary-lint` is a free, open source tool that checks whether the
+first paragraph of each section (H2/H3) in an HTML file still makes sense
+on its own when an AI search system extracts only that section, out of
+the context of the rest of the page. That is how RAG and generative
+answers usually consume content, section by section, not the whole page
+at once. It runs locally with the Python standard library only.
 
-## O que a ferramenta verifica
+Its heuristics are specific to Brazilian Portuguese text: the connective
+list, the stopwords and the report are all in Portuguese.
 
-1. **Fronteira de chunk** — o parágrafo não pode abrir com um conectivo
-   que depende do que veio antes ("além disso", "por isso", "também", "no
-   entanto"...). Se a seção for recortada sozinha, esse conectivo fica sem
-   referente.
-2. **Answer-first** — o parágrafo deveria retomar ao menos um termo do
-   próprio heading, sinal de que a seção responde ao próprio tópico logo
-   na primeira frase.
+## Contents
 
-É irmão do [`citability-lint`](https://github.com/lucasferrazseo/citability-lint),
-que audita o parágrafo isolado; este audita a fronteira entre seções.
+- [Background](#background)
+- [What it checks](#what-it-checks)
+- [Installation](#installation)
+- [Usage](#usage)
+- [FAQ](#faq)
+- [Limitations](#limitations)
+- [Methodology](#methodology)
+- [Contributing](#contributing)
+- [Author](#author)
+- [License](#license)
 
-## Instalação
+## Background
 
-Só biblioteca padrão do Python (3.9 ou mais recente). Sem dependência
-externa.
+Retrieval systems (RAG) that feed AI answers split a page into pieces
+("chunks"), usually by section, and retrieve the piece most relevant to
+the question, not the whole page. If the first paragraph of a section
+opens with "Além disso, isso também ajuda..." ("Besides that, this also
+helps..."), that piece makes no sense on its own. `chunk-boundary-lint`
+audits exactly that cut point.
+
+## What it checks
+
+1. **Chunk boundary.** The paragraph must not open with a connective that
+   depends on what came before ("além disso", "por isso", "também", "no
+   entanto"...). If the section is extracted alone, that connective has
+   nothing to refer to.
+2. **Answer-first.** The paragraph should pick up at least one term from
+   its own heading, a sign that the section answers its own topic in the
+   first sentence.
+
+It is a sibling of
+[`citability-lint`](https://github.com/LucasFerrazSEO/citability-lint),
+which audits the paragraph in isolation; this one audits the boundary
+between sections.
+
+## Installation
+
+Python 3.9 or newer, standard library only. No external dependencies.
 
 ```bash
-git clone https://github.com/lucasferrazseo/chunk-boundary-lint.git
+git clone https://github.com/LucasFerrazSEO/chunk-boundary-lint.git
 cd chunk-boundary-lint
 ```
 
-## Como usar, passo a passo
+## Usage
 
-**1. Rode contra um arquivo HTML com headings H2/H3.**
+**1. Run it against an HTML file with H2/H3 headings.**
 
 ```bash
 python chunk_boundary_lint.py artigo.html
 ```
 
-**2. Leia o relatório.** Exemplo real, de um artigo com duas seções (a
-primeira com problema proposital):
+**2. Read the report.** Real output from an article with two sections
+(the first one has a deliberate problem). The tool prints its report in
+Brazilian Portuguese.
 
 ```
 === chunk-boundary-lint: secoes.html ===
@@ -60,48 +82,52 @@ primeira com problema proposital):
 (Checagem mecânica de fronteira de chunk. Leitura humana continua manual.)
 ```
 
-A segunda seção do mesmo arquivo, sem esses problemas, entra na contagem
-de OK e não aparece na lista de atenção.
+The second section of the same file has none of these problems, so it
+counts as OK and does not appear in the warning list.
 
-**3. Use `--strict` em CI/CD**, para bloquear publicação com fronteira de
-chunk quebrada:
+**3. Use `--strict` in CI/CD** to block publishing when a chunk boundary
+is broken (exit code 1 if there is any warning):
 
 ```bash
 python chunk_boundary_lint.py artigo.html --strict
 ```
 
-## Perguntas frequentes
+## FAQ
 
-**chunk-boundary-lint é realmente grátis?**
-Sim, código aberto sob licença MIT.
+**Is chunk-boundary-lint really free?**
+Yes. It is open source under the MIT license.
 
-**Isso funciona para markdown, ou só HTML?**
-Só HTML com heading H2/H3 nesta versão. Converta markdown para HTML antes
-(por exemplo, com o próprio conversor do seu gerador de site estático) se
-quiser auditar um post em markdown.
+**Does it work with Markdown, or only HTML?**
+Only HTML with H2/H3 headings in this version. Convert Markdown to HTML
+first (for example with your static site generator's own converter) if
+you want to audit a Markdown post.
 
-**"Answer-first" significa repetir a keyword do heading no parágrafo?**
-Não exatamente — significa retomar algum termo relacionado ao heading, por
-raiz de palavra. Não é uma regra de densidade de keyword, é uma checagem de
-coerência entre pergunta (heading) e resposta (primeiro parágrafo).
+**Does "answer-first" mean repeating the heading keyword in the
+paragraph?**
+Not exactly. It means picking up some term related to the heading, by
+word stem. It is not a keyword density rule; it is a coherence check
+between the question (heading) and the answer (first paragraph).
 
-## Limitações
+## Limitations
 
-Cobre só português brasileiro e só HTML com heading H2/H3. "Answer-first"
-é heurística por raiz de palavra, não sinônimo semântico — pode apontar
-falso positivo quando a seção usa um termo relacionado, mas diferente, do
-heading.
+It covers only Brazilian Portuguese and only HTML with H2/H3 headings.
+"Answer-first" is a word-stem heuristic, not semantic synonym matching,
+so it can flag a false positive when the section uses a related but
+different term from the heading.
 
-## Método e origem
+## Methodology
 
-Generalização da checagem de fronteira de chunk usada desde 2026 no
-processo editorial de [lucasferrazseo.com](https://lucasferrazseo.com).
+A generalization of the chunk boundary check used since 2026 in the
+editorial process of [lucasferrazseo.com](https://lucasferrazseo.com).
 
-## Autor
+## Contributing
 
-[Lucas Ferraz](https://lucasferraz.com) — especialista em SEO, criação de
-sites e SEO para IA, fundador da [Lucas Ferraz SEO](https://lucasferrazseo.com).
+Bug reports and suggestions are welcome through [GitHub Issues](https://github.com/LucasFerrazSEO/chunk-boundary-lint/issues).
 
-## Licença
+## Author
 
-MIT — ver [LICENSE](LICENSE).
+[Lucas Ferraz](https://lucasferraz.com) is an SEO, website development and Generative Engine Optimization specialist and the founder of [Lucas Ferraz SEO](https://lucasferrazseo.com).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
